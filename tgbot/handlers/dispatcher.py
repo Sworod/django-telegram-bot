@@ -10,13 +10,13 @@ from telegram.ext import (
     ChosenInlineResultHandler,
 )
 
-from celery.decorators import task  # event processing in async mode
+from dtb.celery import app  # event processing in async mode
 
 from dtb.settings import TELEGRAM_TOKEN
 
 from tgbot.handlers import admin, commands, files, location
 from tgbot.handlers.commands import broadcast_command_with_message
-from tgbot.handlers.handlers import secret_level, broadcast_decision_handler
+from tgbot.handlers.handlers import secret_level, broadcast_decision_handler, echo
 from tgbot.handlers.manage_data import SECRET_LEVEL_BUTTON, CONFIRM_DECLINE_BROADCAST
 from tgbot.handlers.static_text import broadcast_command
 
@@ -28,26 +28,26 @@ def setup_dispatcher(dp):
 
     dp.add_handler(CommandHandler("start", commands.command_start))
 
-    # admin commands
-    dp.add_handler(CommandHandler("admin", admin.admin))
-    dp.add_handler(CommandHandler("stats", admin.stats))
-
-    dp.add_handler(MessageHandler(
-        Filters.animation, files.show_file_id,
-    ))
+    # # admin commands
+    # dp.add_handler(CommandHandler("admin", admin.admin))
+    # dp.add_handler(CommandHandler("stats", admin.stats))
+    #
+    # dp.add_handler(MessageHandler(
+    #     Filters.animation, files.show_file_id,
+    # ))
 
     # location
-    dp.add_handler(CommandHandler("ask_location", location.ask_for_location))
-    dp.add_handler(MessageHandler(Filters.location, location.location_handler))
-
+    # dp.add_handler(CommandHandler("ask_location", location.ask_for_location))
+    # dp.add_handler(MessageHandler(Filters.location, location.location_handler))
+    #
 
     dp.add_handler(CallbackQueryHandler(secret_level, pattern=f"^{SECRET_LEVEL_BUTTON}"))
 
-    dp.add_handler(MessageHandler(Filters.regex(rf'^{broadcast_command} .*'), broadcast_command_with_message))
-    dp.add_handler(CallbackQueryHandler(broadcast_decision_handler, pattern=f"^{CONFIRM_DECLINE_BROADCAST}"))
+    # dp.add_handler(MessageHandler(Filters.regex(rf'^{broadcast_command} .*'), broadcast_command_with_message))
+    # dp.add_handler(CallbackQueryHandler(broadcast_decision_handler, pattern=f"^{CONFIRM_DECLINE_BROADCAST}"))
 
     #EXAMPLES FOR HANDLERS
-    # dp.add_handler(MessageHandler(Filters.text, <function_handler>))
+    dp.add_handler(MessageHandler(Filters.text, echo))
     # dp.add_handler(MessageHandler(
     #     Filters.document, <function_handler>,
     # ))
@@ -76,7 +76,7 @@ def run_pooling():
     updater.idle()
 
 
-@task(ignore_result=True)
+@app.task(ignore_result=True)
 def process_telegram_event(update_json):
     update = telegram.Update.de_json(update_json, bot)
     dispatcher.process_update(update)

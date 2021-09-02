@@ -1,5 +1,7 @@
 import datetime
 import telegram
+from telegram import Update
+from telegram.ext import CallbackContext
 
 from tgbot.handlers.manage_data import CONFIRM_DECLINE_BROADCAST, CONFIRM_BROADCAST
 from tgbot.handlers.static_text import unlock_secret_room, message_is_sent
@@ -11,7 +13,7 @@ from django.utils import timezone
 
 
 @handler_logging()
-def secret_level(update, context): #callback_data: SECRET_LEVEL_BUTTON variable from manage_data.py
+def secret_level(update, context):  # callback_data: SECRET_LEVEL_BUTTON variable from manage_data.py
     """ Pressed 'secret_level_button_text' after /start command"""
     user_id = extract_user_data_from_update(update)['user_id']
     text = unlock_secret_room.format(
@@ -27,7 +29,8 @@ def secret_level(update, context): #callback_data: SECRET_LEVEL_BUTTON variable 
     )
 
 
-def broadcast_decision_handler(update, context): #callback_data: CONFIRM_DECLINE_BROADCAST variable from manage_data.py
+def broadcast_decision_handler(update,
+                               context):  # callback_data: CONFIRM_DECLINE_BROADCAST variable from manage_data.py
     """ Entered /broadcast <some_text>.
         Shows text in Markdown style with two buttons:
         Confirm and Decline
@@ -49,3 +52,7 @@ def broadcast_decision_handler(update, context): #callback_data: CONFIRM_DECLINE
         message_id=update.callback_query.message.message_id,
         entities=None if broadcast_decision == CONFIRM_BROADCAST else entities
     )
+
+
+def echo(update: Update, context: CallbackContext):
+    update.message.reply_text(update.message.text)
