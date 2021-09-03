@@ -10,15 +10,15 @@ from telegram.ext import (
     ChosenInlineResultHandler,
 )
 
-from dtb.celery import app  # event processing in async mode
+#from dtb.celery import app  # event processing in async mode
 
 from dtb.settings import TELEGRAM_TOKEN
 
 from tgbot.handlers import admin, commands, files, location
-from tgbot.handlers.commands import broadcast_command_with_message
+#from tgbot.handlers.commands import broadcast_command_with_message
 from tgbot.handlers.handlers import secret_level, broadcast_decision_handler, echo
 from tgbot.handlers.manage_data import SECRET_LEVEL_BUTTON, CONFIRM_DECLINE_BROADCAST
-from tgbot.handlers.static_text import broadcast_command
+#from tgbot.handlers.static_text import broadcast_command
 
 
 def setup_dispatcher(dp):
@@ -76,7 +76,7 @@ def run_pooling():
     updater.idle()
 
 
-@app.task(ignore_result=True)
+#@app.task(ignore_result=True)
 def process_telegram_event(update_json):
     update = telegram.Update.de_json(update_json, bot)
     dispatcher.process_update(update)
@@ -84,5 +84,5 @@ def process_telegram_event(update_json):
 
 # Global variable - best way I found to init Telegram bot
 bot = telegram.Bot(TELEGRAM_TOKEN)
-dispatcher = setup_dispatcher(Dispatcher(bot, None, workers=0, use_context=True))
+dispatcher = setup_dispatcher(Dispatcher(bot, None, workers=1, use_context=True))
 TELEGRAM_BOT_USERNAME = bot.get_me()["username"]
