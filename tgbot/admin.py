@@ -53,16 +53,16 @@ class UserAdmin(admin.ModelAdmin):
         )
 
 
-@admin.register(Location)
+# @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     list_display = ['id', 'user_id', 'created_at']
 
 
-@admin.register(Arcgis)
+# @admin.register(Arcgis)
 class ArcgisAdmin(admin.ModelAdmin):
     list_display = ['location', 'city', 'country_code']
 
 
-@admin.register(UserActionLog)
+# @admin.register(UserActionLog)
 class UserActionLogAdmin(admin.ModelAdmin):
     list_display = ['user', 'action', 'created_at']
