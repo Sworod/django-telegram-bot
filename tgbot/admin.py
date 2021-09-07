@@ -3,10 +3,10 @@ import telegram
 from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django_celery_beat.models import IntervalSchedule, CrontabSchedule, PeriodicTask, ClockedSchedule, SolarSchedule
 
 from dtb.settings import DEBUG
 
-from tgbot.models import Location, Arcgis
 from tgbot.models import User, UserActionLog
 from tgbot.forms import BroadcastForm
 from tgbot.handlers import utils
@@ -17,7 +17,7 @@ from tgbot.tasks import broadcast_message
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = [
-        'user_id', 'username', 'first_name', 'last_name', 
+        'user_id', 'username', 'first_name', 'last_name',
         'language_code', 'deep_link',
         'created_at', 'updated_at', "is_blocked_bot",
     ]
@@ -37,7 +37,8 @@ class UserAdmin(admin.ModelAdmin):
             # TODO: for all platforms?
             if len(queryset) <= 3 or DEBUG:  # for test / debug purposes - run in same thread
                 for u in queryset:
-                    utils.send_message(user_id=u.user_id, text=broadcast_message_text, parse_mode=telegram.ParseMode.MARKDOWN)
+                    utils.send_message(user_id=u.user_id, text=broadcast_message_text,
+                                       parse_mode=telegram.ParseMode.MARKDOWN)
                 self.message_user(request, "Just broadcasted to %d users" % len(queryset))
             else:
                 user_ids = list(set(u.user_id for u in queryset))
@@ -49,7 +50,7 @@ class UserAdmin(admin.ModelAdmin):
 
         form = BroadcastForm(initial={'_selected_action': queryset.values_list('user_id', flat=True)})
         return render(
-            request, "admin/broadcast_message.html", {'items': queryset,'form': form, 'title':u' '}
+            request, "admin/broadcast_message.html", {'items': queryset, 'form': form, 'title': u' '}
         )
 
 
@@ -66,3 +67,10 @@ class ArcgisAdmin(admin.ModelAdmin):
 # @admin.register(UserActionLog)
 class UserActionLogAdmin(admin.ModelAdmin):
     list_display = ['user', 'action', 'created_at']
+
+
+admin.site.unregister(IntervalSchedule)
+admin.site.unregister(CrontabSchedule)
+admin.site.unregister(PeriodicTask)
+admin.site.unregister(ClockedSchedule)
+admin.site.unregister(SolarSchedule)
