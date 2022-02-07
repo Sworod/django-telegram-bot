@@ -1,13 +1,18 @@
 import datetime
+from decimal import Decimal
+
 import telegram
+from django.db.models.functions import Lower
 from telegram import Update
 from telegram.ext import CallbackContext
 
+from dtb.settings import DEBUG
+from spending.models import SpendingType
 from tgbot.handlers.manage_data import CONFIRM_DECLINE_BROADCAST, CONFIRM_BROADCAST
 from tgbot.handlers.static_text import unlock_secret_room, message_is_sent
 from tgbot.handlers.utils import handler_logging
 from tgbot.models import User
-from tgbot.tasks import broadcast_message
+#from tgbot.tasks import broadcast_message
 from tgbot.utils import extract_user_data_from_update
 from django.utils import timezone
 
@@ -29,30 +34,45 @@ def secret_level(update, context):  # callback_data: SECRET_LEVEL_BUTTON variabl
     )
 
 
-def broadcast_decision_handler(update,
-                               context):  # callback_data: CONFIRM_DECLINE_BROADCAST variable from manage_data.py
-    """ Entered /broadcast <some_text>.
-        Shows text in Markdown style with two buttons:
-        Confirm and Decline
-    """
-    broadcast_decision = update.callback_query.data[len(CONFIRM_DECLINE_BROADCAST):]
-    entities_for_celery = update.callback_query.message.to_dict().get('entities')
-    entities = update.callback_query.message.entities
-    text = update.callback_query.message.text
-    if broadcast_decision == CONFIRM_BROADCAST:
-        admin_text = f"{message_is_sent}"
-        user_ids = list(User.objects.all().values_list('user_id', flat=True))
-        broadcast_message.delay(user_ids=user_ids, message=text, entities=entities_for_celery)
-    else:
-        admin_text = text
-
-    context.bot.edit_message_text(
-        text=admin_text,
-        chat_id=update.callback_query.message.chat_id,
-        message_id=update.callback_query.message.message_id,
-        entities=None if broadcast_decision == CONFIRM_BROADCAST else entities
-    )
-
 
 def echo(update: Update, context: CallbackContext):
-    update.message.reply_text(update.message.text)
+    update.effective_message.reply_text(f'Эхо работает \n{update.effective_message.text}')
+
+
+def spending_add(update: Update, context: CallbackContext):
+    text = update.effective_message.text
+    words = text.split(" ")
+    text_to_user = ""
+    try:
+        # берем число
+        amount = Decimal(words[0])
+
+        if not DEBUG:
+            spending_types = [x.lower()
+                              for x in
+                              list(SpendingType.objects.all().distinct('type').values_list(flat=True))]
+            spending_subtypes = [x.lower()
+                              for x in
+                              list(SpendingType.objects.all().distinct('subtype').values_list(flat=True))]
+        else:
+            spending_types = [x.lower()
+                              for x in
+                              list(SpendingType.objects.all().values_list('type', flat=True).distinct())]
+
+        # второе слово - тип
+        spending_type = words[1]
+        if spending_type.lower() in spending_types:
+            text_to_user = f"Распознаны Сумма {amount}, тип {spending_type} and "
+        else:
+            update.effective_message.reply_text(f"Тип не распознан {words[1]}")
+
+        # третье слово - подтип
+        if len(words) == 3:
+            spending_subtype = words[2]
+
+
+    except Exception as e:
+        update.effective_message.reply_text(f"Не удалось сконвертировать")
+        print(e)
+
+    update.effective_message.reply_text(text_to_user)
