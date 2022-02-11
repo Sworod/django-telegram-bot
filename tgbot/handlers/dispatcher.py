@@ -1,6 +1,7 @@
 """
     Telegram event handlers
 """
+import logging
 
 import telegram
 from telegram.ext import (
@@ -38,6 +39,7 @@ def run_pooling():
     bot_info = telegram.Bot(TELEGRAM_TOKEN).get_me()
     bot_link = f"https://t.me/" + bot_info["username"]
 
+    logging.info(f"Pooling of '{bot_link}' started")
     print(f"Pooling of '{bot_link}' started")
     updater.start_polling()
     updater.idle()
